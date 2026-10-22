@@ -9,6 +9,7 @@ An auditable, safety-first trading agent for the Wallex hackathon. It uses a Lan
 - The LLM can veto a trade but cannot override the deterministic risk checks.
 - BoxAPI is preferred when `BOXAPI_API_KEY` is configured; it is passed through the OpenAI-compatible ChatOpenAI client using `BOXAPI_API_URL_BASE`.
 - Every cycle writes a JSONL decision record: indicators, AI review, risk outcome, and execution result.
+- Performance accounting uses the 5,000,000 TMN initial capital, FIFO realized PnL, quote-currency fees, and excludes open coin inventory from the return percentage.
 - API keys stay in `.env`, which is ignored by Git.
 
 This is a hackathon prototype, not investment advice. Run shadow testing and review decision logs before any live trading.

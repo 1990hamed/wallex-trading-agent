@@ -7,6 +7,10 @@ import sys
 from wallex_trading_agent.agent import TradingAgent
 from wallex_trading_agent.config import Settings
 from wallex_trading_agent.models import DecisionLog
+from wallex_trading_agent.performance import (
+    calculate_realized_performance,
+    fills_from_decision_records,
+)
 
 
 def main() -> None:
@@ -31,6 +35,14 @@ def main() -> None:
     settings.decision_log_path.parent.mkdir(parents=True, exist_ok=True)
     with settings.decision_log_path.open("a", encoding="utf-8") as log_file:
         log_file.write(json.dumps(entry.to_dict(), default=str, ensure_ascii=False) + "\n")
+    records = [
+        json.loads(line)
+        for line in settings.decision_log_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    performance = calculate_realized_performance(
+        fills_from_decision_records(records), settings.initial_capital_tmn
+    )
     # Windows consoles may still use cp1252; escaped JSON keeps the CLI reliable.
     action_names = {"BUY": "BUY", "SELL": "SELL", "HOLD": "HOLD"}
     print("=" * 60)
@@ -64,5 +76,8 @@ def main() -> None:
         "submitted": "ارسال شد",
     }.get(str(entry.execution.get("status")), str(entry.execution.get("status", "نامشخص")))
     print(f"Execution result: {execution_status}")
+    print(f"Realized PnL (TMN): {performance.realized_pnl}")
+    print(f"Net return: {performance.return_percent}%")
+    print(f"Open coin quantity (excluded from return): {performance.open_quantity}")
     print("Full log: " + str(settings.decision_log_path))
     print("=" * 60)

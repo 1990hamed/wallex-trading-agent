@@ -1,5 +1,6 @@
 """Configuration comes only from environment variables and .env; no CLI parsing."""
 
+from decimal import Decimal
 from pathlib import Path
 
 from pydantic import Field, SecretStr, field_validator
@@ -24,6 +25,7 @@ class Settings(BaseSettings):
     poll_interval_seconds: int = Field(default=300, ge=30)
     risk_per_trade: float = Field(default=0.005, gt=0, le=0.02)
     max_daily_loss_fraction: float = Field(default=0.02, gt=0, le=0.1)
+    initial_capital_tmn: Decimal = Decimal("5000000")
     max_position_fraction: float = Field(default=0.10, gt=0, le=0.25)
     stop_loss_atr: float = Field(default=1.5, gt=0, le=5)
     take_profit_atr: float = Field(default=2.5, gt=0, le=8)
