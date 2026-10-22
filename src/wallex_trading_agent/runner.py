@@ -26,4 +26,5 @@ def main() -> None:
     settings.decision_log_path.parent.mkdir(parents=True, exist_ok=True)
     with settings.decision_log_path.open("a", encoding="utf-8") as log_file:
         log_file.write(json.dumps(entry.to_dict(), default=str, ensure_ascii=False) + "\n")
-    print(json.dumps(entry.to_dict(), default=str, ensure_ascii=False, indent=2))
+    # Windows consoles may still use cp1252; escaped JSON keeps the CLI reliable.
+    print(json.dumps(entry.to_dict(), default=str, ensure_ascii=True, indent=2))
