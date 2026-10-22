@@ -14,11 +14,11 @@ class Settings(BaseSettings):
     boxapi_api_url_base: str = "https://ai.boxapi.ir/ai/v1"
     wallex_api_key: SecretStr | None = None
     mcp_server_url: str = "https://api.wallex.ir/mcp"
-    ai_model: str = "gpt-5-mini"
+    ai_model: str = "gpt-5.6-mini"
     log_level: str = "INFO"
     trading_mode: str = "shadow"
     enable_live_trading: bool = False
-    symbol: str = "BTCUSDT"
+    symbol: str = "BTCTMN"
     candle_resolution: str = "60"
     candle_count: int = Field(default=120, ge=50, le=1000)
     poll_interval_seconds: int = Field(default=300, ge=30)
