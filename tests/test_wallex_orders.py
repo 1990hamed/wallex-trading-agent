@@ -26,3 +26,19 @@ def test_stop_limit_order_uses_wallex_stop_price_field(monkeypatch):
     assert captured["json"]["stop_Price"] == "3000000000"
     assert captured["json"]["side"] == "SELL"
 
+
+def test_idempotency_key_is_stable_and_distinguishes_intents():
+    kwargs = {
+        "symbol": "BTCTMN",
+        "side": "BUY",
+        "price": Decimal("3000000000"),
+        "quantity": Decimal("0.01"),
+    }
+    first = WallexClient.idempotency_key(purpose="entry", **kwargs)
+    second = WallexClient.idempotency_key(purpose="entry", **kwargs)
+    different = WallexClient.idempotency_key(purpose="take-profit", **kwargs)
+
+    assert first == second
+    assert first != different
+    assert first.startswith("agent-")
+

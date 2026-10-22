@@ -226,6 +226,13 @@ class TradingAgent:
             side=decision.action,
             price=decision.entry_price,
             quantity=decision.quantity,
+            client_id=self.wallex.idempotency_key(
+                purpose="entry",
+                symbol=self.settings.symbol,
+                side=decision.action,
+                price=decision.entry_price,
+                quantity=decision.quantity,
+            ),
         )
         execution: dict[str, object] = {
             "status": "ارسال شد",
@@ -243,12 +250,27 @@ class TradingAgent:
                     stop_price=decision.stop_loss,
                     price=decision.stop_loss,
                     quantity=filled,
+                    client_id=self.wallex.idempotency_key(
+                        purpose="stop-loss",
+                        symbol=self.settings.symbol,
+                        side="SELL",
+                        price=decision.stop_loss,
+                        quantity=filled,
+                        stop_price=decision.stop_loss,
+                    ),
                 )
                 take = self.wallex.create_limit_order(
                     symbol=self.settings.symbol,
                     side="SELL",
                     price=decision.take_profit,
                     quantity=filled,
+                    client_id=self.wallex.idempotency_key(
+                        purpose="take-profit",
+                        symbol=self.settings.symbol,
+                        side="SELL",
+                        price=decision.take_profit,
+                        quantity=filled,
+                    ),
                 )
                 execution["protective_orders"] = {
                     "stop_loss": stop.get("result", stop),

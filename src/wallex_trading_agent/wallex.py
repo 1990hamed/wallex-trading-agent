@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
+import hashlib
 from decimal import Decimal
 from typing import Any
 
@@ -85,10 +86,12 @@ class WallexClient:
         return self._request("GET", "/v1/account/balances").get("result", {}).get("balances", {})
 
     def create_limit_order(
-        self, *, symbol: str, side: str, price: Decimal, quantity: Decimal
+        self, *, symbol: str, side: str, price: Decimal, quantity: Decimal,
+        client_id: str | None = None,
     ) -> dict[str, Any]:
         return self._create_order(
-            symbol=symbol, side=side, order_type="LIMIT", price=price, quantity=quantity
+            symbol=symbol, side=side, order_type="LIMIT", price=price, quantity=quantity,
+            client_id=client_id,
         )
 
     def create_stop_limit_order(
@@ -99,6 +102,7 @@ class WallexClient:
         stop_price: Decimal,
         price: Decimal,
         quantity: Decimal,
+        client_id: str | None = None,
     ) -> dict[str, Any]:
         """Create a Spot stop-limit order using Wallex's documented stop_Price field."""
         return self._create_order(
@@ -108,6 +112,7 @@ class WallexClient:
             price=price,
             quantity=quantity,
             stop_price=stop_price,
+            client_id=client_id,
         )
 
     def _create_order(
@@ -119,8 +124,9 @@ class WallexClient:
         price: Decimal,
         quantity: Decimal,
         stop_price: Decimal | None = None,
+        client_id: str | None = None,
     ) -> dict[str, Any]:
-        client_id = f"agent-{uuid.uuid4()}"
+        client_id = client_id or f"agent-{uuid.uuid4()}"
         body: dict[str, Any] = {
             "symbol": symbol,
             "type": order_type,
@@ -137,3 +143,13 @@ class WallexClient:
             "/v1/account/orders",
             json=body,
         )
+
+    @staticmethod
+    def idempotency_key(*, purpose: str, symbol: str, side: str, price: Decimal,
+                        quantity: Decimal, stop_price: Decimal | None = None) -> str:
+        """Return a stable Wallex client_id for an identical order intent."""
+        raw = "|".join(
+            [purpose, symbol, side, format(price, "f"), format(quantity, "f"),
+             format(stop_price, "f") if stop_price is not None else ""]
+        )
+        return f"agent-{hashlib.sha256(raw.encode()).hexdigest()[:32]}"
