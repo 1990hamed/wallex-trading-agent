@@ -85,6 +85,22 @@ class WallexClient:
     def balances(self) -> dict[str, Any]:
         return self._request("GET", "/v1/account/balances").get("result", {}).get("balances", {})
 
+    def open_orders(self, symbol: str | None = None) -> list[dict[str, Any]]:
+        params = {"symbol": symbol} if symbol else None
+        result = self._request("GET", "/v1/account/openOrders", params=params).get("result", {})
+        return result.get("orders", result if isinstance(result, list) else [])
+
+    def order_detail(self, client_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/v1/account/orders/{client_id}").get("result", {})
+
+    def cancel_order(self, client_id: str) -> dict[str, Any]:
+        return self._request("DELETE", f"/v1/account/orders/{client_id}")
+
+    def market_rules(self, symbol: str) -> dict[str, Any]:
+        markets = self._request("GET", "/hector/web/v1/markets").get("result", {})
+        items = markets.get("symbols", markets if isinstance(markets, list) else [])
+        return next((item for item in items if item.get("symbol") == symbol), {})
+
     def create_limit_order(
         self, *, symbol: str, side: str, price: Decimal, quantity: Decimal,
         client_id: str | None = None,

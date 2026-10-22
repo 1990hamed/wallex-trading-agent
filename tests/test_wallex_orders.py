@@ -42,3 +42,20 @@ def test_idempotency_key_is_stable_and_distinguishes_intents():
     assert first != different
     assert first.startswith("agent-")
 
+
+def test_account_order_management_endpoints(monkeypatch):
+    client = WallexClient("test-key")
+    calls = []
+
+    def fake_request(method, path, **kwargs):
+        calls.append((method, path, kwargs))
+        if path.endswith("openOrders"):
+            return {"result": {"orders": [{"clientId": "x"}]}}
+        return {"result": {"clientId": "x"}}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    assert client.open_orders("BTCTMN")[0]["clientId"] == "x"
+    client.order_detail("x")
+    client.cancel_order("x")
+    assert [method for method, _, _ in calls] == ["GET", "GET", "DELETE"]
+
