@@ -40,18 +40,25 @@ def main() -> None:
     print(f"Decision: {action_names.get(entry.decision.action, entry.decision.action)}")
     print(f"Entry price: {entry.decision.entry_price}")
     print(f"Confidence: {entry.decision.confidence:.0%}")
-    print("Reasons:")
-    for reason in entry.decision.reasons:
-        print(f"  - {reason}")
+    print("Signals:")
+    for name, value in entry.decision.signal_values.items():
+        print(f"  - {name}: {value}")
     ai_status = {
-        "confirmed": "تأیید شد",
-        "vetoed: low confidence or HOLD": "رد شد: اطمینان کم یا HOLD",
-        "vetoed: conflicting action": "رد شد: اقدام متناقض",
-        "failed": "خطا در بررسی",
-        "skipped": "رد شد: کلید مدل تنظیم نشده",
+        "confirmed": "confirmed",
+        "vetoed: low confidence or HOLD": "vetoed: low confidence or HOLD",
+        "vetoed: conflicting action": "vetoed: conflicting action",
+        "failed": "review failed",
+        "skipped": "skipped: model key is not configured",
     }.get(str(entry.ai_review.get("status")), str(entry.ai_review.get("status", "نامشخص")))
     print(f"BoxAPI review: {ai_status}")
-    print(f"Risk control: {entry.risk_reason}")
+    risk_reason = {
+        "سیگنال تأییدشده‌ای وجود ندارد": "no approved trading signal",
+        "کلید WALLEX_API_KEY تنظیم نشده است": "WALLEX_API_KEY is not configured",
+        "موجودی ارز مظنه برای خرید وجود ندارد": "no quote balance available",
+        "حجم فروش در سقف مجاز محدود شد": "sell size capped",
+        "حجم موقعیت زیر سقف ریسک و تخصیص سرمایه است": "position is below risk and allocation caps",
+    }.get(entry.risk_reason, "risk check completed")
+    print(f"Risk control: {risk_reason}")
     execution_status = {
         "skipped": "رد شد",
         "submitted": "ارسال شد",
