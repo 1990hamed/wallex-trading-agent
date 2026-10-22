@@ -10,6 +10,7 @@ Action = Literal["BUY", "SELL", "HOLD"]
 
 @dataclass(frozen=True)
 class Candle:
+    """One OHLCV candle used by the deterministic strategy."""
     timestamp: int
     open: Decimal
     high: Decimal
@@ -20,6 +21,7 @@ class Candle:
 
 @dataclass(frozen=True)
 class MarketSnapshot:
+    """Current quote and historical candles for one Spot symbol."""
     symbol: str
     best_bid: Decimal
     best_ask: Decimal
@@ -27,11 +29,13 @@ class MarketSnapshot:
 
     @property
     def mid_price(self) -> Decimal:
+        """Return the midpoint between the best bid and best ask."""
         return (self.best_bid + self.best_ask) / Decimal("2")
 
 
 @dataclass(frozen=True)
 class TradeDecision:
+    """Auditable action proposal including sizing and protective prices."""
     action: Action
     confidence: float
     quantity: Decimal
@@ -44,6 +48,7 @@ class TradeDecision:
 
 @dataclass(frozen=True)
 class DecisionLog:
+    """Serializable record of one complete agent cycle."""
     timestamp: str
     mode: str
     symbol: str
@@ -67,6 +72,7 @@ class DecisionLog:
         ai_review: dict[str, object],
         execution: dict[str, object],
     ) -> DecisionLog:
+        """Build a timestamped decision record in UTC."""
         return cls(
             timestamp=datetime.now(UTC).isoformat(),
             mode=mode,
@@ -80,4 +86,5 @@ class DecisionLog:
         )
 
     def to_dict(self) -> dict[str, object]:
+        """Convert the nested dataclass to JSON-compatible dictionaries."""
         return asdict(self)

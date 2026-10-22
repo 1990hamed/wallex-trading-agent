@@ -7,6 +7,7 @@ from wallex_trading_agent.models import Action, MarketSnapshot, TradeDecision
 
 
 def _ema(values: list[float], period: int) -> float:
+    """Calculate an exponential moving average for a close-price series."""
     alpha = 2 / (period + 1)
     value = values[0]
     for close in values[1:]:
@@ -15,6 +16,7 @@ def _ema(values: list[float], period: int) -> float:
 
 
 def _rsi(closes: list[float], period: int = 14) -> float:
+    """Calculate the bounded relative-strength index."""
     changes = [right - left for left, right in zip(closes, closes[1:], strict=False)]
     gains = [max(change, 0) for change in changes[-period:]]
     losses = [abs(min(change, 0)) for change in changes[-period:]]
@@ -25,6 +27,7 @@ def _rsi(closes: list[float], period: int = 14) -> float:
 
 
 def _atr(snapshot: MarketSnapshot, period: int = 14) -> Decimal:
+    """Calculate average true range from the latest candles."""
     candles = snapshot.candles[-(period + 1) :]
     ranges = [
         max(
@@ -38,6 +41,7 @@ def _atr(snapshot: MarketSnapshot, period: int = 14) -> Decimal:
 
 
 def propose(snapshot: MarketSnapshot) -> TradeDecision:
+    """Generate a deterministic EMA/RSI/ATR Spot decision."""
     if len(snapshot.candles) < 50:
         return TradeDecision(
             "HOLD", 0, Decimal("0"), snapshot.mid_price, None, None, ["دادهٔ کندلی کافی نیست"], {}

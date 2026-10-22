@@ -12,10 +12,12 @@ from wallex_trading_agent.models import Candle, MarketSnapshot
 
 
 class WallexAPIError(RuntimeError):
+    """Raised when Wallex rejects a request or returns unusable data."""
     pass
 
 
 class WallexClient:
+    """Small authenticated REST client for Spot data and order operations."""
     """Small REST client kept separate from the agent so orders stay auditable."""
 
     base_url = "https://api.wallex.ir"

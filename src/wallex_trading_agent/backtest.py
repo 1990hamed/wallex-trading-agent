@@ -12,6 +12,7 @@ from wallex_trading_agent.strategy import propose
 
 @dataclass(frozen=True)
 class BacktestResult:
+    """Summary of a deterministic historical strategy run."""
     report: PerformanceReport
     trade_count: int
     fills: list[Fill]
@@ -25,6 +26,7 @@ def run_backtest(
     max_position_fraction: Decimal = Decimal("0.10"),
     fee_fraction: Decimal = Decimal("0.001"),
 ) -> BacktestResult:
+    """Replay candles with realized Spot accounting and no network orders."""
     """Simulate close-price Spot entries/exits; open inventory is excluded from return."""
     fills: list[Fill] = []
     position = Decimal("0")

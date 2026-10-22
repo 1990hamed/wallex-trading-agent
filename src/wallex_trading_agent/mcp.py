@@ -7,6 +7,7 @@ from wallex_trading_agent.config import Settings
 
 
 class McpToolCatalog:
+    """Discover and expose names of tools published by the Wallex MCP server."""
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 

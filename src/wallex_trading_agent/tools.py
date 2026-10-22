@@ -13,6 +13,7 @@ def calculate_spot_position_size(
     stop_distance: str,
     entry_price: str,
 ) -> str:
+    """Return a risk-capped Spot quantity as a decimal string."""
     """Calculate a Spot quantity under risk and allocation caps."""
     balance = Decimal(available_quote)
     risk_size = (balance * Decimal(risk_fraction)) / Decimal(stop_distance)

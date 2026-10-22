@@ -15,6 +15,7 @@ from wallex_trading_agent.wallex import WallexClient
 
 
 class AIReview(BaseModel):
+    """Structured Persian review returned by the model provider."""
     action: str = Field(description="BUY, SELL, or HOLD")
     confidence: float = Field(ge=0, le=1)
     rationale: str = Field(max_length=500)
@@ -33,6 +34,7 @@ class AgentState(TypedDict, total=False):
 
 
 class TradingAgent:
+    """LangGraph orchestration of market data, review, risk, and execution."""
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         api_key = settings.wallex_api_key.get_secret_value() if settings.wallex_api_key else None
@@ -56,6 +58,7 @@ class TradingAgent:
         return graph.compile()
 
     def run_once(self) -> AgentState:
+        """Execute exactly one auditable trading cycle."""
         return self.graph.invoke({})
 
     def _collect_market(self, _: AgentState) -> AgentState:
