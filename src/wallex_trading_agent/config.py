@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     openai_api_key: SecretStr | None = None
+    boxapi_api_key: SecretStr | None = None
+    boxapi_api_url_base: str = "https://ai.boxapi.ir/ai/v1"
     wallex_api_key: SecretStr | None = None
     mcp_server_url: str = "https://api.wallex.ir/mcp"
     ai_model: str = "gpt-5-mini"
@@ -43,3 +45,11 @@ class Settings(BaseSettings):
     @property
     def live_execution_allowed(self) -> bool:
         return self.trading_mode == "live" and self.enable_live_trading
+
+    @property
+    def model_api_key(self) -> SecretStr | None:
+        return self.boxapi_api_key or self.openai_api_key
+
+    @property
+    def model_base_url(self) -> str | None:
+        return self.boxapi_api_url_base if self.boxapi_api_key else None

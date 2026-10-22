@@ -68,7 +68,7 @@ class TradingAgent:
 
     def _ai_review(self, state: AgentState) -> AgentState:
         candidate = state["deterministic_decision"]
-        if not self.settings.openai_api_key:
+        if not self.settings.model_api_key:
             return {
                 "decision": candidate,
                 "ai_review": {"status": "skipped", "reason": "OPENAI_API_KEY is not configured"},
@@ -76,9 +76,14 @@ class TradingAgent:
         try:
             from langchain_openai import ChatOpenAI
 
-            review_model = ChatOpenAI(
-                model=self.settings.ai_model, temperature=0
-            ).with_structured_output(AIReview)
+            model_kwargs = {
+                "model": self.settings.ai_model,
+                "temperature": 0,
+                "api_key": self.settings.model_api_key.get_secret_value(),
+            }
+            if self.settings.model_base_url:
+                model_kwargs["base_url"] = self.settings.model_base_url
+            review_model = ChatOpenAI(**model_kwargs).with_structured_output(AIReview)
             review = review_model.invoke(
                 [
                     (

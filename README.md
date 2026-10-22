@@ -7,6 +7,7 @@ An auditable, safety-first trading agent for the Wallex hackathon. It uses a Lan
 - The default is `TRADING_MODE=shadow`: it produces and logs proposed orders, but submits nothing.
 - Live order submission requires **both** `TRADING_MODE=live` and `ENABLE_LIVE_TRADING=true`.
 - The LLM can veto a trade but cannot override the deterministic risk checks.
+- BoxAPI is preferred when `BOXAPI_API_KEY` is configured; it is passed through the OpenAI-compatible ChatOpenAI client using `BOXAPI_API_URL_BASE`.
 - Every cycle writes a JSONL decision record: indicators, AI review, risk outcome, and execution result.
 - API keys stay in `.env`, which is ignored by Git.
 
