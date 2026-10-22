@@ -32,15 +32,15 @@ def main() -> None:
     with settings.decision_log_path.open("a", encoding="utf-8") as log_file:
         log_file.write(json.dumps(entry.to_dict(), default=str, ensure_ascii=False) + "\n")
     # Windows consoles may still use cp1252; escaped JSON keeps the CLI reliable.
-    action_names = {"BUY": "خرید", "SELL": "فروش", "HOLD": "نگهداری"}
+    action_names = {"BUY": "BUY", "SELL": "SELL", "HOLD": "HOLD"}
     print("=" * 60)
-    print("گزارش اجرای عامل معاملاتی والکس")
-    print(f"نماد: {entry.symbol}")
-    print(f"حالت اجرا: {'سایه (بدون سفارش واقعی)' if entry.mode == 'shadow' else 'واقعی'}")
-    print(f"تصمیم: {action_names.get(entry.decision.action, entry.decision.action)}")
-    print(f"قیمت ورود: {entry.decision.entry_price}")
-    print(f"اعتماد: {entry.decision.confidence:.0%}")
-    print("دلایل:")
+    print("Wallex Trading Agent Run")
+    print(f"Symbol: {entry.symbol}")
+    print(f"Mode: {'shadow (no live order)' if entry.mode == 'shadow' else 'live'}")
+    print(f"Decision: {action_names.get(entry.decision.action, entry.decision.action)}")
+    print(f"Entry price: {entry.decision.entry_price}")
+    print(f"Confidence: {entry.decision.confidence:.0%}")
+    print("Reasons:")
     for reason in entry.decision.reasons:
         print(f"  - {reason}")
     ai_status = {
@@ -50,12 +50,12 @@ def main() -> None:
         "failed": "خطا در بررسی",
         "skipped": "رد شد: کلید مدل تنظیم نشده",
     }.get(str(entry.ai_review.get("status")), str(entry.ai_review.get("status", "نامشخص")))
-    print(f"بررسی BoxAPI: {ai_status}")
-    print(f"کنترل ریسک: {entry.risk_reason}")
+    print(f"BoxAPI review: {ai_status}")
+    print(f"Risk control: {entry.risk_reason}")
     execution_status = {
         "skipped": "رد شد",
         "submitted": "ارسال شد",
     }.get(str(entry.execution.get("status")), str(entry.execution.get("status", "نامشخص")))
-    print(f"نتیجه اجرا: {execution_status}")
-    print("لاگ کامل: " + str(settings.decision_log_path))
+    print(f"Execution result: {execution_status}")
+    print("Full log: " + str(settings.decision_log_path))
     print("=" * 60)
