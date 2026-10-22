@@ -31,6 +31,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [project.scripts]
 wallex-trading-agent = "wallex_trading_agent:main"
+wallex-backtest = "wallex_trading_agent.backtest_runner:main"
 
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]

@@ -37,6 +37,15 @@ class WallexClient:
         if not bids or not asks:
             raise WallexAPIError(f"No bid/ask available for {symbol}")
 
+        candles = self.historical_candles(symbol, resolution, candle_count)
+        return MarketSnapshot(
+            symbol=symbol,
+            best_bid=Decimal(str(bids[0]["price"])),
+            best_ask=Decimal(str(asks[0]["price"])),
+            candles=candles,
+        )
+
+    def historical_candles(self, symbol: str, resolution: str, candle_count: int) -> list[Candle]:
         now = int(time.time())
         history = self._request(
             "GET",
@@ -52,7 +61,7 @@ class WallexClient:
             raise WallexAPIError(
                 f"Candle history unavailable: {history.get('errmsg', 'unknown error')}"
             )
-        candles = [
+        return [
             Candle(
                 timestamp=int(timestamp),
                 open=Decimal(str(open_)),
@@ -71,12 +80,6 @@ class WallexClient:
                 strict=True,
             )
         ]
-        return MarketSnapshot(
-            symbol=symbol,
-            best_bid=Decimal(str(bids[0]["price"])),
-            best_ask=Decimal(str(asks[0]["price"])),
-            candles=candles,
-        )
 
     def balances(self) -> dict[str, Any]:
         return self._request("GET", "/v1/account/balances").get("result", {}).get("balances", {})
