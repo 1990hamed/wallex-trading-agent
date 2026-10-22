@@ -14,6 +14,8 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
     settings = Settings()
     logging.basicConfig(level=settings.log_level)
+    for noisy_logger in ("httpx", "httpcore", "httpx2", "mcp.client.streamable_http"):
+        logging.getLogger(noisy_logger).setLevel(logging.WARNING)
     agent = TradingAgent(settings)
     state = agent.run_once()
     entry = DecisionLog.create(
