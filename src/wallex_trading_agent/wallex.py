@@ -101,6 +101,20 @@ class WallexClient:
         items = markets.get("symbols", markets if isinstance(markets, list) else [])
         return next((item for item in items if item.get("symbol") == symbol), {})
 
+    def reconcile_protective_orders(self, *, stop_client_id: str, take_profit_client_id: str) -> str:
+        """Cancel the sibling exit once either protective order has filled."""
+        stop = self.order_detail(stop_client_id)
+        take = self.order_detail(take_profit_client_id)
+        stop_status = str(stop.get("status", "")).upper()
+        take_status = str(take.get("status", "")).upper()
+        if stop_status == "FILLED":
+            self.cancel_order(take_profit_client_id)
+            return "stop_loss_filled_take_profit_cancelled"
+        if take_status == "FILLED":
+            self.cancel_order(stop_client_id)
+            return "take_profit_filled_stop_loss_cancelled"
+        return "both_protective_orders_open"
+
     def create_limit_order(
         self, *, symbol: str, side: str, price: Decimal, quantity: Decimal,
         client_id: str | None = None,
