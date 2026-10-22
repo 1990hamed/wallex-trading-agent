@@ -101,7 +101,9 @@ class WallexClient:
         items = markets.get("symbols", markets if isinstance(markets, list) else [])
         return next((item for item in items if item.get("symbol") == symbol), {})
 
-    def reconcile_protective_orders(self, *, stop_client_id: str, take_profit_client_id: str) -> str:
+    def reconcile_protective_orders(
+        self, *, stop_client_id: str, take_profit_client_id: str
+    ) -> str:
         """Cancel the sibling exit once either protective order has filled."""
         stop = self.order_detail(stop_client_id)
         take = self.order_detail(take_profit_client_id)
