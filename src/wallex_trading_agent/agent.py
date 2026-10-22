@@ -208,7 +208,10 @@ class TradingAgent:
             return {
                 "execution": {
                     "status": "سایه",
-                    "reason": "برای سفارش، TRADING_MODE=live و ENABLE_LIVE_TRADING=true را تنظیم کنید",
+                    "reason": (
+                        "برای سفارش، TRADING_MODE=live و "
+                        "ENABLE_LIVE_TRADING=true را تنظیم کنید"
+                    ),
                     "side": decision.action,
                     "price": str(decision.entry_price),
                     "quantity": str(decision.quantity),
