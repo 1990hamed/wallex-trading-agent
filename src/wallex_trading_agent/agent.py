@@ -88,16 +88,17 @@ class TradingAgent:
                 [
                     (
                         "system",
-                        "You are a conservative crypto trading reviewer. Never invent prices. "
-                        "Approve BUY or SELL only when quantitative evidence is coherent. "
-                        "Return HOLD whenever evidence is weak or uncertain.",
+                        "تو یک ارزیاب محافظه‌کار معاملات اسپات رمزارز هستی. قیمت جعل نکن. "
+                        "فقط وقتی شواهد کمی منسجم است BUY یا SELL را تأیید کن. "
+                        "وقتی شواهد ضعیف یا نامطمئن است HOLD برگردان. "
+                        "rationale و risk_flag را فارسی بنویس.",
                     ),
                     (
                         "human",
-                        f"Symbol: {state['snapshot'].symbol}\n"
-                        f"Candidate: {candidate.action}\nSignals: {candidate.signal_values}\n"
-                        f"Candidate reasons: {candidate.reasons}\n"
-                        f"Available Wallex MCP tools: {state['mcp_tools']}",
+                        f"نماد: {state['snapshot'].symbol}\n"
+                        f"پیشنهاد اولیه: {candidate.action}\nسیگنال‌ها: {candidate.signal_values}\n"
+                        f"دلایل اولیه: {candidate.reasons}\n"
+                        f"ابزارهای MCP والکس: {state['mcp_tools']}",
                     ),
                 ]
             )

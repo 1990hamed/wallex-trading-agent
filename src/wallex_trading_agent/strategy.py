@@ -40,7 +40,7 @@ def _atr(snapshot: MarketSnapshot, period: int = 14) -> Decimal:
 def propose(snapshot: MarketSnapshot) -> TradeDecision:
     if len(snapshot.candles) < 50:
         return TradeDecision(
-            "HOLD", 0, Decimal("0"), snapshot.mid_price, None, None, ["insufficient candles"], {}
+            "HOLD", 0, Decimal("0"), snapshot.mid_price, None, None, ["دادهٔ کندلی کافی نیست"], {}
         )
     closes = [float(candle.close) for candle in snapshot.candles]
     fast, slow, rsi, atr = (
@@ -50,15 +50,20 @@ def propose(snapshot: MarketSnapshot) -> TradeDecision:
         _atr(snapshot),
     )
     action: Action = "HOLD"
-    reasons = [f"EMA9={fast:.4f}", f"EMA21={slow:.4f}", f"RSI14={rsi:.1f}", f"ATR14={atr}"]
+    reasons = [
+        f"EMA9={fast:.4f}",
+        f"EMA21={slow:.4f}",
+        f"RSI14={rsi:.1f}",
+        f"ATR14={atr}",
+    ]
     if fast > slow and 52 <= rsi <= 68:
         action = "BUY"
-        reasons.append("trend and momentum aligned for long entry")
+        reasons.append("روند و مومنتوم برای ورود خرید هم‌سو هستند")
     elif fast < slow and rsi >= 70:
         action = "SELL"
-        reasons.append("weak trend with overbought momentum; exit signal")
+        reasons.append("روند ضعیف و مومنتوم بیش‌خرید است؛ سیگنال خروج")
     else:
-        reasons.append("no high-conviction setup")
+        reasons.append("فرصت معاملاتی با اطمینان بالا دیده نشد")
     return TradeDecision(
         action=action,
         confidence=0.7 if action != "HOLD" else 0.2,
