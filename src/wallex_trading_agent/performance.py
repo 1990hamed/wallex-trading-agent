@@ -29,6 +29,26 @@ class PerformanceReport:
         return {key: str(value) for key, value in self.__dict__.items()}
 
 
+class SettlementError(ValueError):
+    """Raised when the challenge account cannot be settled in quote currency."""
+
+
+def settle_challenge(
+    fills: list[Fill], initial_capital: Decimal = Decimal("5000000")
+) -> PerformanceReport:
+    """Return the official TMN settlement report.
+
+    The challenge only settles realized Spot performance. Any remaining coin
+    inventory is rejected instead of being valued at a possibly changing price.
+    """
+    report = calculate_realized_performance(fills, initial_capital)
+    if report.open_quantity != 0:
+        raise SettlementError(
+            "Cannot settle: all Spot coin inventory must be sold before the challenge ends"
+        )
+    return report
+
+
 def calculate_realized_performance(
     fills: list[Fill], initial_capital: Decimal = Decimal("5000000")
 ) -> PerformanceReport:
