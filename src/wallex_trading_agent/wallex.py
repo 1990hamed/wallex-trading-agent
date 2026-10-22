@@ -87,16 +87,53 @@ class WallexClient:
     def create_limit_order(
         self, *, symbol: str, side: str, price: Decimal, quantity: Decimal
     ) -> dict[str, Any]:
+        return self._create_order(
+            symbol=symbol, side=side, order_type="LIMIT", price=price, quantity=quantity
+        )
+
+    def create_stop_limit_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        stop_price: Decimal,
+        price: Decimal,
+        quantity: Decimal,
+    ) -> dict[str, Any]:
+        """Create a Spot stop-limit order using Wallex's documented stop_Price field."""
+        return self._create_order(
+            symbol=symbol,
+            side=side,
+            order_type="STOP_LIMIT",
+            price=price,
+            quantity=quantity,
+            stop_price=stop_price,
+        )
+
+    def _create_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        order_type: str,
+        price: Decimal,
+        quantity: Decimal,
+        stop_price: Decimal | None = None,
+    ) -> dict[str, Any]:
         client_id = f"agent-{uuid.uuid4()}"
+        body: dict[str, Any] = {
+            "symbol": symbol,
+            "type": order_type,
+            "side": side,
+            "price": format(price, "f"),
+            "quantity": format(quantity, "f"),
+            "client_id": client_id,
+        }
+        if stop_price is not None:
+            # Wallex's Spot API spells this field with a capital P.
+            body["stop_Price"] = format(stop_price, "f")
         return self._request(
             "POST",
             "/v1/account/orders",
-            json={
-                "symbol": symbol,
-                "type": "LIMIT",
-                "side": side,
-                "price": format(price, "f"),
-                "quantity": format(quantity, "f"),
-                "client_id": client_id,
-            },
+            json=body,
         )

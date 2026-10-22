@@ -227,4 +227,33 @@ class TradingAgent:
             price=decision.entry_price,
             quantity=decision.quantity,
         )
-        return {"execution": {"status": "ارسال شد", "result": result.get("result", result)}}
+        execution: dict[str, object] = {
+            "status": "ارسال شد",
+            "result": result.get("result", result),
+        }
+        # Spot protection is posted only after an entry is confirmed filled.
+        # A resting limit entry cannot safely have exits for quantity it does not own yet.
+        if decision.action == "BUY" and decision.stop_loss and decision.take_profit:
+            payload = result.get("result", result)
+            filled = Decimal(str(payload.get("executedQty", payload.get("filledQuantity", "0"))))
+            if filled > 0:
+                stop = self.wallex.create_stop_limit_order(
+                    symbol=self.settings.symbol,
+                    side="SELL",
+                    stop_price=decision.stop_loss,
+                    price=decision.stop_loss,
+                    quantity=filled,
+                )
+                take = self.wallex.create_limit_order(
+                    symbol=self.settings.symbol,
+                    side="SELL",
+                    price=decision.take_profit,
+                    quantity=filled,
+                )
+                execution["protective_orders"] = {
+                    "stop_loss": stop.get("result", stop),
+                    "take_profit": take.get("result", take),
+                }
+            else:
+                execution["protection_status"] = "ورود هنوز تکمیل نشده؛ سفارش حفاظتی ثبت نشد"
+        return {"execution": execution}

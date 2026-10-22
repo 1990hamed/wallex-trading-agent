@@ -1,0 +1,28 @@
+from decimal import Decimal
+
+from wallex_trading_agent.wallex import WallexClient
+
+
+def test_stop_limit_order_uses_wallex_stop_price_field(monkeypatch):
+    client = WallexClient("test-key")
+    captured = {}
+
+    def fake_request(method, path, **kwargs):
+        captured.update(method=method, path=path, **kwargs)
+        return {"success": True, "result": {"clientId": "stop-1"}}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    client.create_stop_limit_order(
+        symbol="BTCTMN",
+        side="SELL",
+        stop_price=Decimal("3000000000"),
+        price=Decimal("2990000000"),
+        quantity=Decimal("0.01"),
+    )
+
+    assert captured["method"] == "POST"
+    assert captured["path"] == "/v1/account/orders"
+    assert captured["json"]["type"] == "STOP_LIMIT"
+    assert captured["json"]["stop_Price"] == "3000000000"
+    assert captured["json"]["side"] == "SELL"
+
