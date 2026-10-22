@@ -14,6 +14,12 @@ An auditable, safety-first trading agent for the Wallex hackathon. It uses a Lan
 
 This is a hackathon prototype, not investment advice. Run shadow testing and review decision logs before any live trading.
 
+## Submission documentation
+
+See [DELIVERY.md](DELIVERY.md) for the complete architecture, strategy, risk,
+reproducibility, and evaluation description. The auditable decision-log format
+is documented in [docs/DECISION_LOG_SCHEMA.md](docs/DECISION_LOG_SCHEMA.md).
+
 ## Architecture
 
 ```text
