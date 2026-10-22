@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     openai_api_key: SecretStr | None = None
     wallex_api_key: SecretStr | None = None
-    mcp_server_url: str | None = None
+    mcp_server_url: str = "https://api.wallex.ir/mcp"
     ai_model: str = "gpt-5-mini"
     log_level: str = "INFO"
     trading_mode: str = "shadow"
@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     stop_loss_atr: float = Field(default=1.5, gt=0, le=5)
     take_profit_atr: float = Field(default=2.5, gt=0, le=8)
     decision_log_path: Path = Path("data/decision_log.jsonl")
+
+    @field_validator("mcp_server_url", mode="before")
+    @classmethod
+    def default_mcp_url(cls, value: str | None) -> str:
+        return value.strip() if value and value.strip() else "https://api.wallex.ir/mcp"
 
     @field_validator("trading_mode")
     @classmethod

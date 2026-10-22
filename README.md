@@ -1,6 +1,6 @@
 # Wallex Trading Agent
 
-An auditable, safety-first trading agent for the Wallex hackathon. It uses a LangGraph workflow, discovers the configured Wallex MCP tools, and uses the Wallex REST API for verifiable market data and order submission.
+An auditable, safety-first trading agent for the Wallex hackathon. It uses a LangGraph workflow, discovers Wallex MCP tools at `https://api.wallex.ir/mcp`, and uses the Wallex REST API for verifiable market data and order submission.
 
 ## Safety model
 
