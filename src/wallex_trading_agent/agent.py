@@ -71,7 +71,7 @@ class TradingAgent:
         if not self.settings.model_api_key:
             return {
                 "decision": candidate,
-                "ai_review": {"status": "skipped", "reason": "OPENAI_API_KEY is not configured"},
+                "ai_review": {"status": "skipped", "reason": "کلید مدل تنظیم نشده است"},
             }
         try:
             from langchain_openai import ChatOpenAI
@@ -107,20 +107,20 @@ class TradingAgent:
             if review.action not in {candidate.action, "HOLD"}:
                 review_data["status"] = "vetoed: conflicting action"
                 return {
-                    "decision": self._hold(candidate, "AI returned conflicting action"),
+                    "decision": self._hold(candidate, "هوش مصنوعی اقدام متناقض برگرداند"),
                     "ai_review": review_data,
                 }
             if review.action == "HOLD" or review.confidence < 0.60:
                 review_data["status"] = "vetoed: low confidence or HOLD"
                 return {
-                    "decision": self._hold(candidate, f"AI veto: {review.rationale}"),
+                    "decision": self._hold(candidate, f"رد توسط BoxAPI: {review.rationale}"),
                     "ai_review": review_data,
                 }
             review_data["status"] = "confirmed"
             return {"decision": candidate, "ai_review": review_data}
         except Exception as exc:
             return {
-                "decision": self._hold(candidate, "AI review unavailable; safe hold"),
+                "decision": self._hold(candidate, "بررسی BoxAPI در دسترس نبود؛ توقف امن"),
                 "ai_review": {"status": "failed", "reason": type(exc).__name__},
             }
 
@@ -140,9 +140,9 @@ class TradingAgent:
     def _risk_check(self, state: AgentState) -> AgentState:
         decision = state["decision"]
         if decision.action == "HOLD":
-            return {"risk_approved": False, "risk_reason": "No approved trading signal"}
+            return {"risk_approved": False, "risk_reason": "سیگنال تأییدشده‌ای وجود ندارد"}
         if not self.settings.wallex_api_key:
-            return {"risk_approved": False, "risk_reason": "WALLEX_API_KEY is not configured"}
+            return {"risk_approved": False, "risk_reason": "کلید WALLEX_API_KEY تنظیم نشده است"}
         balances = self.wallex.balances()
         base, quote = self._split_symbol(self.settings.symbol)
         if decision.action == "BUY":
@@ -150,22 +150,22 @@ class TradingAgent:
             return self._size_buy(state, available)
         available = Decimal(str(balances.get(base, {}).get("value", 0)))
         if available <= 0:
-            return {"risk_approved": False, "risk_reason": f"No available {base} to sell"}
+            return {"risk_approved": False, "risk_reason": f"موجودی {base} برای فروش کافی نیست"}
         quantity = available * Decimal(str(self.settings.max_position_fraction))
         return {
             "decision": self._with_quantity(decision, quantity),
             "risk_approved": True,
-            "risk_reason": "Sell size capped",
+            "risk_reason": "حجم فروش در سقف مجاز محدود شد",
         }
 
     def _size_buy(self, state: AgentState, available_quote: Decimal) -> AgentState:
         decision = state["decision"]
         if available_quote <= 0:
-            return {"risk_approved": False, "risk_reason": "No quote balance available"}
+            return {"risk_approved": False, "risk_reason": "موجودی ارز مظنه برای خرید وجود ندارد"}
         atr = Decimal(decision.signal_values["atr"])
         stop_distance = atr * Decimal(str(self.settings.stop_loss_atr))
         if stop_distance <= 0:
-            return {"risk_approved": False, "risk_reason": "Invalid ATR for stop-loss sizing"}
+            return {"risk_approved": False, "risk_reason": "ATR برای محاسبه حد ضرر معتبر نیست"}
         risk_quantity = (
             available_quote * Decimal(str(self.settings.risk_per_trade))
         ) / stop_distance
@@ -186,7 +186,7 @@ class TradingAgent:
         return {
             "decision": sized,
             "risk_approved": True,
-            "risk_reason": "Position is below risk and allocation caps",
+            "risk_reason": "حجم موقعیت زیر سقف ریسک و تخصیص سرمایه است",
         }
 
     @staticmethod
@@ -203,12 +203,12 @@ class TradingAgent:
     def _execute_or_shadow(self, state: AgentState) -> AgentState:
         decision = state["decision"]
         if not state["risk_approved"]:
-            return {"execution": {"status": "skipped", "reason": state["risk_reason"]}}
+            return {"execution": {"status": "رد شد", "reason": state["risk_reason"]}}
         if not self.settings.live_execution_allowed:
             return {
                 "execution": {
-                    "status": "shadow",
-                    "reason": "Set TRADING_MODE=live and ENABLE_LIVE_TRADING=true to allow orders",
+                    "status": "سایه",
+                    "reason": "برای سفارش، TRADING_MODE=live و ENABLE_LIVE_TRADING=true را تنظیم کنید",
                     "side": decision.action,
                     "price": str(decision.entry_price),
                     "quantity": str(decision.quantity),
@@ -220,4 +220,4 @@ class TradingAgent:
             price=decision.entry_price,
             quantity=decision.quantity,
         )
-        return {"execution": {"status": "submitted", "result": result.get("result", result)}}
+        return {"execution": {"status": "ارسال شد", "result": result.get("result", result)}}

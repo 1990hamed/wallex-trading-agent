@@ -41,8 +41,19 @@ def main() -> None:
     print("دلایل:")
     for reason in entry.decision.reasons:
         print(f"  - {reason}")
-    print(f"بررسی BoxAPI: {entry.ai_review.get('status', 'نامشخص')}")
+    ai_status = {
+        "confirmed": "تأیید شد",
+        "vetoed: low confidence or HOLD": "رد شد: اطمینان کم یا HOLD",
+        "vetoed: conflicting action": "رد شد: اقدام متناقض",
+        "failed": "خطا در بررسی",
+        "skipped": "رد شد: کلید مدل تنظیم نشده",
+    }.get(str(entry.ai_review.get("status")), str(entry.ai_review.get("status", "نامشخص")))
+    print(f"بررسی BoxAPI: {ai_status}")
     print(f"کنترل ریسک: {entry.risk_reason}")
-    print(f"نتیجه اجرا: {entry.execution.get('status', 'نامشخص')}")
+    execution_status = {
+        "skipped": "رد شد",
+        "submitted": "ارسال شد",
+    }.get(str(entry.execution.get("status")), str(entry.execution.get("status", "نامشخص")))
+    print(f"نتیجه اجرا: {execution_status}")
     print("لاگ کامل: " + str(settings.decision_log_path))
     print("=" * 60)
