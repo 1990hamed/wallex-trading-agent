@@ -10,6 +10,7 @@ from wallex_trading_agent.config import Settings
 from wallex_trading_agent.mcp import McpToolCatalog
 from wallex_trading_agent.models import MarketSnapshot, TradeDecision
 from wallex_trading_agent.strategy import propose
+from wallex_trading_agent.tools import calculate_spot_position_size
 from wallex_trading_agent.wallex import WallexClient
 
 
@@ -166,13 +167,17 @@ class TradingAgent:
         stop_distance = atr * Decimal(str(self.settings.stop_loss_atr))
         if stop_distance <= 0:
             return {"risk_approved": False, "risk_reason": "ATR برای محاسبه حد ضرر معتبر نیست"}
-        risk_quantity = (
-            available_quote * Decimal(str(self.settings.risk_per_trade))
-        ) / stop_distance
-        position_quantity = (
-            available_quote * Decimal(str(self.settings.max_position_fraction))
-        ) / decision.entry_price
-        quantity = min(risk_quantity, position_quantity)
+        quantity = Decimal(
+            calculate_spot_position_size.invoke(
+                {
+                    "available_quote": str(available_quote),
+                    "risk_fraction": str(self.settings.risk_per_trade),
+                    "max_position_fraction": str(self.settings.max_position_fraction),
+                    "stop_distance": str(stop_distance),
+                    "entry_price": str(decision.entry_price),
+                }
+            )
+        )
         stop_loss = decision.entry_price - stop_distance
         take_profit = decision.entry_price + (atr * Decimal(str(self.settings.take_profit_atr)))
         sized = TradeDecision(
