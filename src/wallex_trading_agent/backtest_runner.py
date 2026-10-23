@@ -37,7 +37,9 @@ def main() -> None:
             sum(fill.side.upper() == "BUY" for fill in result.fills),
             sum(fill.side.upper() == "SELL" for fill in result.fills),
         ),
-        "fills": [{key: str(value) for key, value in asdict(fill).items()} for fill in result.fills],
+        "fills": [
+            {key: str(value) for key, value in asdict(fill).items()} for fill in result.fills
+        ],
         "report": result.report.to_dict(),
     }
     with settings.backtest_log_path.open("a", encoding="utf-8") as log_file:
