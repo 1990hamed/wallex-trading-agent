@@ -1,5 +1,6 @@
 """Configuration comes only from environment variables and .env; no CLI parsing."""
 
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -37,6 +38,12 @@ class Settings(BaseSettings):
     decision_log_path: Path = Field(Path("data/decision_log.jsonl"), description="JSONL log path")
     backtest_log_path: Path = Field(
         Path("data/backtest_log.jsonl"), description="Backtest JSONL log path"
+    )
+    trading_end_time: datetime | None = Field(
+        None, description="User-defined trading session end time"
+    )
+    liquidation_buffer_minutes: int = Field(
+        30, ge=0, description="Stop opening positions this many minutes before end"
     )
 
     @field_validator("mcp_server_url", mode="before")

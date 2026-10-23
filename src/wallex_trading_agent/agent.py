@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, TypedDict
+from zoneinfo import ZoneInfo
 
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
@@ -210,6 +212,16 @@ class TradingAgent:
 
     def _execute_or_shadow(self, state: AgentState) -> AgentState:
         decision = state["decision"]
+        session_status = self._session_status()
+        if session_status == "liquidate":
+            return {"execution": self._liquidate(state)}
+        if session_status == "close_only" and decision.action == "BUY":
+            return {
+                "execution": {
+                    "status": "rejected",
+                    "reason": "trading session is in liquidation buffer; new BUY is disabled",
+                }
+            }
         if not state["risk_approved"]:
             return {"execution": {"status": "رد شد", "reason": state["risk_reason"]}}
         if not self.settings.live_execution_allowed:
@@ -289,6 +301,60 @@ class TradingAgent:
             else:
                 execution["protection_status"] = "ورود هنوز تکمیل نشده؛ سفارش حفاظتی ثبت نشد"
         return {"execution": execution}
+
+    def _session_status(self) -> str:
+        """Return normal, close-only, or liquidation status for the configured session."""
+        end_time = self.settings.trading_end_time
+        if end_time is None:
+            return "normal"
+        now = datetime.now(ZoneInfo("Asia/Tehran"))
+        if end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=ZoneInfo("Asia/Tehran"))
+        end_time = end_time.astimezone(ZoneInfo("Asia/Tehran"))
+        if now >= end_time:
+            return "liquidate"
+        if now >= end_time - timedelta(minutes=self.settings.liquidation_buffer_minutes):
+            return "close_only"
+        return "normal"
+
+    def _liquidate(self, state: AgentState) -> dict[str, object]:
+        """Cancel open orders and submit one Spot limit sell for remaining inventory."""
+        base, _ = self._split_symbol(self.settings.symbol)
+        canceled = []
+        for order in self.wallex.open_orders(self.settings.symbol):
+            client_id = order.get("clientId", order.get("client_id"))
+            if client_id:
+                self.wallex.cancel_order(str(client_id))
+                canceled.append(str(client_id))
+        balances = self.wallex.balances()
+        quantity = Decimal(str(balances.get(base, {}).get("value", 0)))
+        if quantity <= 0:
+            return {
+                "status": "settled",
+                "reason": "no remaining Spot inventory",
+                "canceled": canceled,
+            }
+        rules = self.wallex.market_rules(self.settings.symbol)
+        quantity = self.wallex.quantize_order(quantity, self._precision(rules, "amount_precision"))
+        order = self.wallex.create_limit_order(
+            symbol=self.settings.symbol,
+            side="SELL",
+            price=state["snapshot"].best_bid,
+            quantity=quantity,
+            client_id=self.wallex.idempotency_key(
+                purpose="session-liquidation",
+                symbol=self.settings.symbol,
+                side="SELL",
+                price=state["snapshot"].best_bid,
+                quantity=quantity,
+            ),
+        )
+        return {
+            "status": "liquidation_submitted",
+            "quantity": str(quantity),
+            "canceled": canceled,
+            "result": order.get("result", order),
+        }
 
     @staticmethod
     def _precision(rules: dict[str, Any], name: str) -> int | None:
