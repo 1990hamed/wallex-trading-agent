@@ -100,7 +100,9 @@ class WallexClient:
 
     def market_rules(self, symbol: str) -> dict[str, Any]:
         markets = self._request("GET", "/hector/web/v1/markets").get("result", {})
-        items = markets.get("symbols", markets if isinstance(markets, list) else [])
+        items = markets.get(
+            "markets", markets.get("symbols", markets if isinstance(markets, list) else [])
+        )
         return next((item for item in items if item.get("symbol") == symbol), {})
 
     @staticmethod
