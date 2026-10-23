@@ -9,6 +9,8 @@ from wallex_trading_agent.backtest import run_backtest
 from wallex_trading_agent.config import Settings
 from wallex_trading_agent.wallex import WallexClient
 
+TEHRAN_TZ = ZoneInfo("Asia/Tehran")
+
 
 def main() -> None:
     settings = Settings()
@@ -24,7 +26,7 @@ def main() -> None:
     )
     settings.backtest_log_path.parent.mkdir(parents=True, exist_ok=True)
     record = {
-        "timestamp": datetime.now(ZoneInfo("Asia/Tehran")).isoformat(),
+        "timestamp": datetime.now(TEHRAN_TZ).isoformat(),
         "symbol": settings.symbol,
         "candle_count": len(candles),
         "trade_count": result.trade_count,

@@ -6,6 +6,8 @@ from decimal import Decimal
 from typing import Literal
 from zoneinfo import ZoneInfo
 
+TEHRAN_TZ = ZoneInfo("Asia/Tehran")
+
 Action = Literal["BUY", "SELL", "HOLD"]
 
 
@@ -75,7 +77,7 @@ class DecisionLog:
     ) -> DecisionLog:
         """Build a timestamped decision record in UTC."""
         return cls(
-            timestamp=datetime.now(ZoneInfo("Asia/Tehran")).isoformat(),
+            timestamp=datetime.now(TEHRAN_TZ).isoformat(),
             mode=mode,
             symbol=symbol,
             decision=decision,
