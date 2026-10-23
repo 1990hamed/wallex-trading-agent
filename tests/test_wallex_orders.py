@@ -59,3 +59,8 @@ def test_account_order_management_endpoints(monkeypatch):
     client.cancel_order("x")
     assert [method for method, _, _ in calls] == ["GET", "GET", "DELETE"]
 
+
+def test_quantize_order_rounds_down_to_market_precision():
+    assert WallexClient.quantize_order(Decimal("1.239"), 2) == Decimal("1.24")
+    assert WallexClient.quantize_order(Decimal("1.239"), 1) == Decimal("1.2")
+

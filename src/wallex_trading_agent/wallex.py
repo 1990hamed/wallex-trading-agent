@@ -103,6 +103,26 @@ class WallexClient:
         items = markets.get("symbols", markets if isinstance(markets, list) else [])
         return next((item for item in items if item.get("symbol") == symbol), {})
 
+    @staticmethod
+    def quantize_order(value: Decimal, precision: int | None) -> Decimal:
+        """Round an order value to the exchange-supported precision."""
+        if precision is None:
+            return value
+        quantum = Decimal(1).scaleb(-precision)
+        return value.quantize(quantum)
+
+    def wait_for_fill(self, client_id: str, *, timeout_seconds: int = 30) -> dict[str, Any]:
+        """Poll an order until filled, partially filled, or timeout is reached."""
+        deadline = time.monotonic() + timeout_seconds
+        latest: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            latest = self.order_detail(client_id)
+            status = str(latest.get("status", "")).upper()
+            if status in {"FILLED", "PARTIALLY_FILLED", "CANCELED", "REJECTED"}:
+                return latest
+            time.sleep(1)
+        return latest
+
     def reconcile_protective_orders(
         self, *, stop_client_id: str, take_profit_client_id: str
     ) -> str:

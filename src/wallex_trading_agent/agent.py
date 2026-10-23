@@ -224,11 +224,18 @@ class TradingAgent:
                     "quantity": str(decision.quantity),
                 }
             }
+        rules = self.wallex.market_rules(self.settings.symbol)
+        price = self.wallex.quantize_order(
+            decision.entry_price, self._precision(rules, "price_precision")
+        )
+        quantity = self.wallex.quantize_order(
+            decision.quantity, self._precision(rules, "amount_precision")
+        )
         result = self.wallex.create_limit_order(
             symbol=self.settings.symbol,
             side=decision.action,
-            price=decision.entry_price,
-            quantity=decision.quantity,
+            price=price,
+            quantity=quantity,
             client_id=self.wallex.idempotency_key(
                 purpose="entry",
                 symbol=self.settings.symbol,
@@ -282,3 +289,9 @@ class TradingAgent:
             else:
                 execution["protection_status"] = "ورود هنوز تکمیل نشده؛ سفارش حفاظتی ثبت نشد"
         return {"execution": execution}
+
+    @staticmethod
+    def _precision(rules: dict[str, Any], name: str) -> int | None:
+        """Read a market precision while tolerating Wallex response wrappers."""
+        value = rules.get(name)
+        return int(value) if value is not None else None
