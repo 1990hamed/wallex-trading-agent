@@ -7,11 +7,13 @@
 اجرای هر چرخه در `runner.py` با LangGraph انجام می‌شود:
 
 1. `collect_market`: دریافت bid/ask و کندل از Wallex REST و فهرست ابزارهای Wallex MCP.
-2. `propose_trade`: تولید سیگنال قطعی EMA، RSI و ATR.
+2. `propose_trade`: تولید سیگنال قطعی EMA، RSI، ATR و ADX.
 3. `ai_review`: بررسی ساختاریافته توسط BoxAPI (سازگار با OpenAI)؛ مدل فقط می‌تواند سیگنال را تأیید یا HOLD کند.
 4. `risk_check`: کنترل موجودی، اندازه موقعیت، ریسک هر معامله و سقف تخصیص.
 5. `execute_or_shadow`: ثبت پیشنهاد در حالت shadow یا ارسال سفارش Spot با شناسه idempotent در حالت live.
 6. ثبت یک رکورد JSONL برای هر چرخه در `data/decision_log.jsonl`.
+
+بک‌تست‌ها در `data/backtest_log.jsonl` ثبت می‌شوند و زمان همه رکوردها با `Asia/Tehran` است.
 
 ## هوش مصنوعی و ابزارهای والکس
 
@@ -23,6 +25,7 @@
 - SELL فقط برای موجودی Spot موجود مجاز است؛ فروش استقراضی وجود ندارد.
 - سیگنال ضعیف، تضاد AI، نبود موجودی یا نبود کلید API به HOLD/رد امن تبدیل می‌شود.
 - برای BUY، حدضرر و حدسود با ATR محاسبه و پس از fill شدن ورود ثبت می‌شوند.
+- BUY و SELL فقط وقتی قدرت روند `ADX14 >= 20` باشد پیشنهاد می‌شوند.
 - Stop-Loss از نوع Spot `STOP_LIMIT` و Take-Profit سفارش فروش Limit است.
 
 ## مدیریت سرمایه و ریسک
@@ -40,6 +43,8 @@ uv sync --all-groups
 uv run wallex-trading-agent       # یک چرخه، پیش‌فرض shadow
 uv run wallex-backtest            # ارزیابی تاریخی نماد تنظیم‌شده
 uv run wallex-settle              # گزارش نهایی فقط با موجودی کوین صفر
+uv run wallex-healthcheck         # بررسی read-only اتصال و قوانین بازار
+uv run wallex-graph               # تولید نمودار Mermaid گراف Agent
 uv run pytest -q
 uv run ruff check .
 ```
@@ -49,3 +54,5 @@ uv run ruff check .
 ## وضعیت ایمنی تحویل
 
 حالت پیش‌فرض `shadow` است و ارسال سفارش فقط با فعال‌بودن هم‌زمان `TRADING_MODE=live` و `ENABLE_LIVE_TRADING=true` انجام می‌شود. کلیدها در `.env` هستند و commit نمی‌شوند.
+
+با `TRADING_END_TIME` و `LIQUIDATION_BUFFER_MINUTES` می‌توان زمان پایان فعالیت را تعیین کرد؛ در زمان پایان، Agent خرید جدید را متوقف و برای فروش موجودی Spot اقدام می‌کند.

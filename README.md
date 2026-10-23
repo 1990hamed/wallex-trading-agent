@@ -10,6 +10,7 @@ An auditable, safety-first trading agent for the Wallex hackathon. It uses a Lan
 - BoxAPI is preferred when `BOXAPI_API_KEY` is configured; it is passed through the OpenAI-compatible ChatOpenAI client using `BOXAPI_API_URL_BASE`.
 - Every cycle writes a JSONL decision record: indicators, AI review, risk outcome, and execution result.
 - Performance accounting uses the 5,000,000 TMN initial capital, FIFO realized PnL, quote-currency fees, and excludes open coin inventory from the return percentage.
+- Decision timestamps use `Asia/Tehran`; backtests are recorded separately in `data/backtest_log.jsonl`.
 - API keys stay in `.env`, which is ignored by Git.
 
 This is a hackathon prototype, not investment advice. Run shadow testing and review decision logs before any live trading.
@@ -27,7 +28,7 @@ Wallex REST + configured MCP server
               |
         collect_market
               |
-        propose_trade (EMA, RSI, ATR)
+        propose_trade (EMA, RSI, ATR, ADX)
               |
         ai_review (OpenAI structured decision / veto)
               |
@@ -66,6 +67,10 @@ There are no command-line flags and no `argparse`; configuration is exclusively 
 
 The supplied `.env` is already excluded from Git. Do not paste API keys into issues, logs, commits, or demos.
 
+Supported Wallex candle resolutions include `1`, `5`, `15`, `30`, `60`, `240`,
+`360`, `720`, `1D`, and `1W`. The runner executes one cycle per invocation;
+`POLL_INTERVAL_SECONDS` is used by an external scheduler or worker.
+
 ## Quality checks
 
 ```powershell
@@ -84,5 +89,6 @@ The repository also includes a GitHub Actions workflow that repeats these checks
 2. Verify the challenge's approved market, available balance, minimum quantity, and order tick/step requirements.
 3. Set both explicit live gates in your local `.env`.
 4. Start with a deliberately small risk cap. The agent submits only a limit order and preserves its unique `client_id` in the Wallex response.
+5. Optionally set `TRADING_END_TIME` and `LIQUIDATION_BUFFER_MINUTES` to stop new buys and submit a final Spot liquidation order.
 
 The runner executes one deterministic cycle per invocation. Use a supervised scheduler only after shadow testing, rather than an unmonitored infinite loop.
