@@ -59,6 +59,7 @@ uv run wallex-backtest       # Run the historical Spot backtest
 uv run wallex-settle         # Produce the realized TMN settlement report
 uv run wallex-settlement     # Alias for settlement
 uv run wallex-healthcheck    # Read-only Wallex connectivity check
+uv run wallex-graph           # Export the LangGraph Mermaid diagram
 ```
 
 There are no command-line flags and no `argparse`; configuration is exclusively environment-based. Change `.env` to select a permitted `SYMBOL`, resolution, or risk limits.

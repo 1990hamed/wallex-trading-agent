@@ -1,0 +1,22 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	collect_market(collect_market)
+	propose_trade(propose_trade)
+	ai_review(ai_review)
+	risk_check(risk_check)
+	execute_or_shadow(execute_or_shadow)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> collect_market;
+	ai_review --> risk_check;
+	collect_market --> propose_trade;
+	propose_trade --> ai_review;
+	risk_check --> execute_or_shadow;
+	execute_or_shadow --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

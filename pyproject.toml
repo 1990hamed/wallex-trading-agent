@@ -43,6 +43,8 @@ wallex-settle = "wallex_trading_agent.settlement_runner:main"
 wallex-settlement = "wallex_trading_agent.settlement_runner:main"
 # Check Wallex connectivity without placing orders.
 wallex-healthcheck = "wallex_trading_agent.healthcheck:main"
+# Export the LangGraph workflow as Mermaid documentation.
+wallex-graph = "wallex_trading_agent.graph_export:main"
 
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]
