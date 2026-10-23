@@ -1,48 +1,48 @@
-# استراتژی معاملاتی Spot والکس
+# Wallex Spot Trading Strategy
 
-## خلاصه
+## Overview
 
-این پروژه یک موتور معاملاتی خودکار برای بازارهای **Spot** والکس است. عامل با استفاده از دادهٔ بازار، اندیکاتورهای تکنیکال، بررسی BoxAPI و قوانین قطعی مدیریت ریسک تصمیم می‌گیرد که خرید، فروش یا نگهداری انجام دهد.
+This project is an automated trading engine for the **Wallex Spot market**. The agent makes buy, sell, or hold decisions using market data, technical indicators, BoxAPI review, and deterministic risk management rules.
 
-استراتژی فعلی عمداً محافظه‌کار است: در صورت نبودن شواهد کافی، تصمیم `HOLD` صادر می‌شود. هدف، معامله‌کردن بدون منطق نیست؛ هدف، ایجاد بازدهی realized و قابل‌تکرار با کنترل افت سرمایه است.
+The current strategy is intentionally conservative: when there is insufficient evidence, it issues a `HOLD` decision. The goal is not to trade without logic, but to generate repeatable, realized returns while controlling drawdowns.
 
-## جریان تصمیم‌گیری
+## Decision-Making Workflow
 
 ```text
 Wallex REST + Wallex MCP
           │
           ▼
-دریافت order book و کندل‌ها
+Fetch order book and candlesticks
           │
           ▼
-محاسبه EMA9، EMA21، RSI14، ATR14 و ADX14
+Calculate EMA9, EMA21, RSI14, ATR14, and ADX14
           │
           ▼
-پیشنهاد اولیهٔ استراتژی
+Generate initial strategy recommendation
           │
           ▼
-بررسی محافظه‌کارانه با BoxAPI
+Conservative review with BoxAPI
           │
           ▼
-کنترل موجودی و مدیریت ریسک
+Balance checks and risk management
           │
           ▼
-Shadow یا ثبت سفارش Spot
+Shadow execution or Spot order placement
           │
           ▼
-ثبت دلیل، fill و نتیجه در JSONL
+Log rationale, fills, and results to JSONL
 ```
 
-## داده‌های ورودی
+## Input Data
 
-برای نماد تنظیم‌شده در `.env`، عامل موارد زیر را دریافت می‌کند:
+For the symbol configured in `.env`, the agent retrieves the following:
 
-- بهترین قیمت خرید و فروش از order book؛
-- کندل‌های تاریخی با resolution تنظیم‌شده؛
-- موجودی حساب برای بررسی امکان خرید یا فروش؛
-- ابزارهای MCP والکس برای دسترسی و بررسی قابلیت‌های رسمی صرافی.
+- Best bid and ask prices from the order book;
+- Historical candlesticks using the configured resolution;
+- Account balances to determine whether buying or selling is possible;
+- Wallex MCP tools to access and inspect the exchange's official capabilities.
 
-نماد از `SYMBOL` خوانده می‌شود و باید یک بازار Spot مجاز باشد. مقدار فعلی پیشنهادی:
+The symbol is read from `SYMBOL` and must represent an eligible Spot market. The recommended current configuration is:
 
 ```env
 SYMBOL=BTCTMN
@@ -50,32 +50,32 @@ CANDLE_RESOLUTION=60
 CANDLE_COUNT=120
 ```
 
-## اندیکاتورها
+## Technical Indicators
 
 ### EMA
 
-EMA کوتاه‌مدت و میان‌مدت برای تشخیص جهت روند استفاده می‌شوند:
+Short-term and medium-term exponential moving averages are used to identify the market trend:
 
-- EMA9: روند کوتاه‌مدت؛
-- EMA21: روند میان‌مدت.
+- EMA9: Short-term trend;
+- EMA21: Medium-term trend.
 
 ### RSI14
 
-RSI قدرت حرکت قیمت و وضعیت اشباع خرید/فروش را نشان می‌دهد. RSI پایین به‌تنهایی سیگنال خرید نیست؛ باید همراه روند و سایر شواهد بررسی شود.
+RSI measures price momentum and identifies overbought or oversold conditions. A low RSI alone is not a buy signal; it must be evaluated alongside the trend and other indicators.
 
 ### ATR14
 
-ATR اندازهٔ نوسان را تخمین می‌زند و برای تعیین حجم معامله، حد ضرر و حد سود استفاده می‌شود؛ جهت بازار را تعیین نمی‌کند.
+ATR estimates market volatility and is used to determine trade size, stop-loss levels, and take-profit levels. It does not determine market direction.
 
 ### ADX14
 
-ADX قدرت روند را بدون تعیین جهت اندازه می‌گیرد. شرط `ADX14 >= 20` از ورود در بازارهای خنثی و کم‌قدرت جلوگیری می‌کند.
+ADX measures trend strength without indicating its direction. The condition `ADX14 >= 20` helps avoid entering trades in weak or sideways markets.
 
-## قوانین پیشنهاد معامله
+## Trade Recommendation Rules
 
-### خرید Spot
+### Spot Buy
 
-پیشنهاد خرید زمانی ساخته می‌شود که:
+A buy recommendation is generated when the following conditions are met:
 
 ```text
 EMA9 > EMA21
@@ -83,11 +83,11 @@ EMA9 > EMA21
 ADX14 >= 20
 ```
 
-این یعنی روند کوتاه‌مدت مثبت است و مومنتوم هنوز وارد ناحیهٔ بیش‌خرید شدید نشده است.
+This indicates a positive short-term trend, with momentum that has not yet entered an excessively overbought zone.
 
-### فروش Spot
+### Spot Sell
 
-پیشنهاد فروش/خروج زمانی ساخته می‌شود که:
+A sell/exit recommendation is generated when the following conditions are met:
 
 ```text
 EMA9 < EMA21
@@ -95,27 +95,27 @@ RSI14 >= 70
 ADX14 >= 20
 ```
 
-فروش فقط از دارایی موجود انجام می‌شود. این سیستم Short یا فروش بدون موجودی را پشتیبانی نمی‌کند.
+Selling is permitted only when the relevant asset is already held. The system does not support short selling or selling assets that are not available in the account.
 
-### نگهداری
+### Hold
 
-در هر وضعیت دیگر، تصمیم `HOLD` صادر می‌شود. این تصمیم شامل بازار خنثی، روند نامشخص، RSI نامناسب یا دادهٔ ناکافی است.
+In all other situations, the system issues a `HOLD` decision. This includes sideways markets, unclear trends, unsuitable RSI values, and insufficient data.
 
-## نقش BoxAPI
+## Role of BoxAPI
 
-BoxAPI تصمیم اولیه را بررسی می‌کند و دلیل قابل‌توضیح و risk flag برمی‌گرداند. مدل اجازه ندارد قوانین قطعی ریسک را دور بزند.
+BoxAPI reviews the initial recommendation and returns an explainable rationale and a risk flag. The model is not allowed to override deterministic risk management rules.
 
-پیشنهاد فقط وقتی تأیید می‌شود که:
+A recommendation is approved only when:
 
-- BoxAPI همان action را تأیید کند؛
-- confidence حداقل `0.60` باشد؛
-- دلیل مدل با داده‌های کمی تناقض نداشته باشد.
+- BoxAPI confirms the same action;
+- Confidence is at least `0.60`;
+- The model's reasoning does not contradict the quantitative data.
 
-در صورت اختلاف، اطمینان کم، خطای مدل یا پاسخ `HOLD`، سیستم به‌صورت امن `HOLD` می‌کند.
+In the event of disagreement, low confidence, a model error, or a `HOLD` response, the system defaults to `HOLD` as a safety measure.
 
-## مدیریت ریسک
+## Risk Management
 
-مقادیر پیش‌فرض:
+Default configuration:
 
 ```env
 RISK_PER_TRADE=0.005
@@ -125,96 +125,106 @@ TAKE_PROFIT_ATR=2.5
 MAX_DAILY_LOSS_FRACTION=0.02
 ```
 
-برای خرید:
+For a buy order:
 
 ```text
 stop_distance = ATR14 × STOP_LOSS_ATR
-risk_quantity = موجودی مظنه × RISK_PER_TRADE ÷ stop_distance
-position_quantity = موجودی مظنه × MAX_POSITION_FRACTION ÷ قیمت ورود
-quantity = کمینهٔ دو مقدار بالا
+
+risk_quantity =
+    quote_currency_balance × RISK_PER_TRADE / stop_distance
+
+position_quantity =
+    quote_currency_balance × MAX_POSITION_FRACTION / entry_price
+
+quantity = minimum of the two quantities above
 ```
 
-حد ضرر و حد سود پیشنهادی:
+Suggested stop-loss and take-profit levels:
 
 ```text
-stop_loss  = entry_price - (ATR14 × STOP_LOSS_ATR)
+stop_loss = entry_price - (ATR14 × STOP_LOSS_ATR)
+
 take_profit = entry_price + (ATR14 × TAKE_PROFIT_ATR)
 ```
 
-فروش فقط تا سقف درصدی از موجودی دارایی انجام می‌شود و بدون موجودی، فروش رد می‌شود.
+Selling is limited to a specified fraction of the available asset balance. If no balance is available, the sell order is rejected.
 
-## سرمایه و محاسبهٔ عملکرد
+## Capital and Performance Calculation
 
-سرمایهٔ مبنای چالش:
+Initial capital for the trading challenge:
 
 ```text
 initial_capital = 5,000,000 TMN
 ```
 
-ماژول عملکرد معاملات را با روش FIFO پردازش می‌کند و موارد زیر را گزارش می‌دهد:
+The performance module processes trades using the FIFO (First In, First Out) method and reports the following:
 
-- realized PnL؛
-- مجموع کارمزدها؛
-- موجودی نقد نهایی؛
-- بازدهی درصدی نسبت به سرمایهٔ اولیه؛
-- مقدار کوین باز.
+- Realized PnL;
+- Total trading fees;
+- Final cash balance;
+- Percentage return relative to initial capital;
+- Remaining open coin position.
 
-فرمول بازدهی:
+Return formula:
 
 ```text
 return (%) = ((final_cash - initial_capital) / initial_capital) × 100
 ```
 
-موجودی کوین باز در بازدهی realized وارد نمی‌شود و در گزارش جداگانه نمایش داده می‌شود. برای تسویهٔ نهایی چالش، موقعیت‌های باز باید بسته و سود/ضرر در TMN محقق شود.
+Unrealized holdings are excluded from realized returns and reported separately. To finalize the trading challenge, all open positions must be closed and the resulting profit or loss must be realized in TMN.
 
-## حالت‌های اجرا
+## Execution Modes
 
-حالت پیش‌فرض Shadow است:
+The default execution mode is Shadow:
 
 ```env
 TRADING_MODE=shadow
 ENABLE_LIVE_TRADING=false
 ```
 
-در این حالت داده و تصمیم دریافت می‌شود، اما سفارش واقعی ثبت نمی‌شود. اجرای واقعی فقط زمانی مجاز است که هر دو گزینهٔ زیر فعال باشند:
+In this mode, market data is retrieved and trading decisions are generated, but no real orders are placed.
+
+Live execution is permitted only when both of the following settings are enabled:
 
 ```env
 TRADING_MODE=live
 ENABLE_LIVE_TRADING=true
 ```
 
-## لاگ و تکرارپذیری
+## Logging and Reproducibility
 
-هر چرخه در `data/decision_log.jsonl` ذخیره می‌شود و شامل موارد زیر است:
+Each cycle is recorded in `data/decision_log.jsonl` and includes:
 
-- نماد و زمان؛
-- مقادیر EMA، RSI، ATR و ADX؛
-- action و confidence اولیه؛
-- دلایل فارسی استراتژی و BoxAPI؛
-- ابزارهای کشف‌شدهٔ MCP؛
-- نتیجهٔ کنترل ریسک؛
-- پاسخ سفارش و fillها، در صورت اجرای واقعی.
+- Symbol and timestamp;
+- EMA, RSI, ATR, and ADX values;
+- Initial action and confidence;
+- Strategy and BoxAPI explanations in Persian;
+- Discovered MCP tools;
+- Risk check results;
+- Order responses and fills, when live execution is enabled.
 
-اجرای CLI متن خلاصه را انگلیسی نمایش می‌دهد، اما توضیحات تصمیم در لاگ فارسی ذخیره می‌شوند.
+The CLI displays its summary in English, while decision explanations are stored in Persian in the log.
 
-زمان‌ها با منطقه `Asia/Tehran` ثبت می‌شوند و لاگ بک‌تست جداگانه در `data/backtest_log.jsonl` ذخیره می‌شود.
+Timestamps are recorded using the `Asia/Tehran` time zone, and backtest logs are stored separately in `data/backtest_log.jsonl`.
 
-## پایان زمان تعیین‌شده توسط کاربر
+## User-Defined End Time
 
-با تنظیم `TRADING_END_TIME`، در بافر پایانی خریدهای جدید متوقف می‌شوند و در زمان پایان، سفارش‌های باز لغو و موجودی Spot برای تسویه به TMN فروخته می‌شود. تکمیل فروش به نقدشوندگی، API و `FILLED` شدن سفارش وابسته است.
+When `TRADING_END_TIME` is configured, new buy orders are disabled during the final buffer period. At the specified end time, open orders are canceled and the Spot holdings are sold for settlement in TMN.
 
-## محدودیت‌ها و کارهای لازم برای ارزیابی نهایی
+Successful liquidation depends on market liquidity, API availability, and the order reaching the `FILLED` status.
 
-- آستانه‌های فعلی باید با بک‌تست روی دادهٔ واقعی والکس ارزیابی شوند؛
-- برای محاسبهٔ نهایی عملکرد، fillهای واقعی و همهٔ کارمزدها باید از حساب چالش خوانده شوند؛
-- پیش از live باید minimum quantity، tick size، precision و نقدشوندگی بازار بررسی شود؛
-- پیش از پایان چالش باید موقعیت‌های باز بسته شوند تا عملکرد realized و برحسب TMN سنجیده شود؛
-- افزایش تعداد معاملات به‌تنهایی هدف نیست؛ معیار اصلی بازدهی خالص، کنترل ضرر و پایداری اجرا است.
+## Limitations and Requirements for Final Evaluation
 
-## اجرای عامل
+- Current thresholds must be evaluated through backtesting on real Wallex market data.
+- Accurate final performance calculations require actual trade fills and all applicable fees to be retrieved from the trading challenge account.
+- Before enabling live trading, minimum quantity, tick size, precision, and market liquidity must be verified.
+- Before the challenge ends, all open positions must be closed so that performance can be measured using realized returns denominated in TMN.
+- Increasing the number of trades is not a goal in itself. The primary metrics are net returns, loss control, and execution reliability.
+
+## Running the Agent
 
 ```powershell
 uv run wallex-trading-agent
 ```
 
-این دستور یک چرخه اجرا می‌کند، تصمیم را ثبت می‌کند و در حالت Shadow متوقف می‌شود.
+This command executes one cycle, records the decision, and stops in Shadow mode.

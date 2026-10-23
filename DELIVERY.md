@@ -1,58 +1,62 @@
 # Wallex Trading Agent — Submission Documentation
 
-این سند همان نسخه‌ای از الگوریتم را مستند می‌کند که در اجرای چالش استفاده می‌شود.
+This document describes the exact version of the algorithm used during the trading challenge.
 
-## معماری
+## Architecture
 
-اجرای هر چرخه در `runner.py` با LangGraph انجام می‌شود:
+Each execution cycle is orchestrated by LangGraph in `runner.py`:
 
-1. `collect_market`: دریافت bid/ask و کندل از Wallex REST و فهرست ابزارهای Wallex MCP.
-2. `propose_trade`: تولید سیگنال قطعی EMA، RSI، ATR و ADX.
-3. `ai_review`: بررسی ساختاریافته توسط BoxAPI (سازگار با OpenAI)؛ مدل فقط می‌تواند سیگنال را تأیید یا HOLD کند.
-4. `risk_check`: کنترل موجودی، اندازه موقعیت، ریسک هر معامله و سقف تخصیص.
-5. `execute_or_shadow`: ثبت پیشنهاد در حالت shadow یا ارسال سفارش Spot با شناسه idempotent در حالت live.
-6. ثبت یک رکورد JSONL برای هر چرخه در `data/decision_log.jsonl`.
+1. `collect_market`: Retrieves bid/ask prices and candlesticks from Wallex REST, along with the list of available Wallex MCP tools.
+2. `propose_trade`: Generates deterministic signals using EMA, RSI, ATR, and ADX.
+3. `ai_review`: Performs a structured review through BoxAPI (OpenAI-compatible). The model can only approve the signal or return `HOLD`.
+4. `risk_check`: Validates account balances, position sizing, per-trade risk, and the maximum allocation limit.
+5. `execute_or_shadow`: Records the recommendation in Shadow mode or submits a Spot order with an idempotent identifier in Live mode.
+6. Records one JSONL entry per cycle in `data/decision_log.jsonl`.
 
-بک‌تست‌ها در `data/backtest_log.jsonl` ثبت می‌شوند و زمان همه رکوردها با `Asia/Tehran` است.
+Backtests are recorded in `data/backtest_log.jsonl`, and all timestamps use the `Asia/Tehran` time zone.
 
-## هوش مصنوعی و ابزارهای والکس
+## AI and Wallex Tools
 
-اتصال MCP به `https://api.wallex.ir/mcp` برای کشف ابزارهاست و نام ابزارهای کشف‌شده در لاگ ذخیره می‌شود. مسیر معامله‌پذیر و قابل ممیزی از REST رسمی Wallex استفاده می‌کند. BoxAPI از طریق endpoint سازگار با OpenAI فراخوانی می‌شود؛ پاسخ آن با مدل ساختاریافته اعتبارسنجی می‌شود و خطا به HOLD امن تبدیل می‌شود.
+The MCP connection to `https://api.wallex.ir/mcp` is used to discover available tools, and the names of discovered tools are stored in the logs. The executable and auditable trading path uses the official Wallex REST API.
 
-## قوانین خرید و فروش
+BoxAPI is called through an OpenAI-compatible endpoint. Its response is validated against a structured model, and any error results in a safe fallback to `HOLD`.
 
-- BUY فقط وقتی سیگنال قطعی و بررسی AI تأیید شده باشد انجام می‌شود.
-- SELL فقط برای موجودی Spot موجود مجاز است؛ فروش استقراضی وجود ندارد.
-- سیگنال ضعیف، تضاد AI، نبود موجودی یا نبود کلید API به HOLD/رد امن تبدیل می‌شود.
-- برای BUY، حدضرر و حدسود با ATR محاسبه و پس از fill شدن ورود ثبت می‌شوند.
-- BUY و SELL فقط وقتی قدرت روند `ADX14 >= 20` باشد پیشنهاد می‌شوند.
-- Stop-Loss از نوع Spot `STOP_LIMIT` و Take-Profit سفارش فروش Limit است.
+## Buy and Sell Rules
 
-## مدیریت سرمایه و ریسک
+- **BUY** is executed only when the deterministic signal has been approved by the AI review.
+- **SELL** is permitted only for existing Spot holdings; short selling is not supported.
+- Weak signals, AI disagreements, insufficient balances, or missing API keys result in a safe `HOLD` or rejection.
+- For BUY orders, stop-loss and take-profit levels are calculated using ATR and recorded after the entry order is filled.
+- Both BUY and SELL signals are generated only when the trend strength satisfies `ADX14 >= 20`.
+- The Spot stop-loss uses a `STOP_LIMIT` order, while the take-profit uses a Limit sell order.
 
-- سرمایه مبنا: `5,000,000 TMN`.
-- ریسک هر معامله و سقف تخصیص از `.env` خوانده می‌شود.
-- کارمزدها در گزارش عملکرد لحاظ می‌شوند.
-- سفارش‌ها `client_id` پایدار دارند تا اجرای دوباره سفارش تکراری نسازد.
-- در پایان، وجود هر مقدار کوین باز تسویه را رد می‌کند؛ بازده فقط بر اساس وجه نقد TMN و سود تحقق‌یافته است.
+## Capital and Risk Management
 
-## تکرارپذیری و ارزیابی
+- Initial capital: `5,000,000 TMN`.
+- Per-trade risk and the maximum allocation limit are read from `.env`.
+- Trading fees are included in performance reports.
+- Orders use a persistent `client_id` to prevent duplicate orders during repeated executions.
+- At the end of the challenge, settlement is rejected if any coin balance remains open. Returns are calculated solely from TMN cash and realized profits.
+
+## Reproducibility and Evaluation
 
 ```powershell
 uv sync --all-groups
-uv run wallex-trading-agent       # یک چرخه، پیش‌فرض shadow
-uv run wallex-backtest            # ارزیابی تاریخی نماد تنظیم‌شده
-uv run wallex-settle              # گزارش نهایی فقط با موجودی کوین صفر
-uv run wallex-healthcheck         # بررسی read-only اتصال و قوانین بازار
-uv run wallex-graph               # تولید نمودار Mermaid گراف Agent
+uv run wallex-trading-agent       # One cycle, Shadow mode by default
+uv run wallex-backtest            # Historical evaluation of the configured symbol
+uv run wallex-settle              # Final report only when the coin balance is zero
+uv run wallex-healthcheck         # Read-only connection and market-rule checks
+uv run wallex-graph               # Generate a Mermaid diagram of the Agent graph
 uv run pytest -q
 uv run ruff check .
 ```
 
-تمام تنظیمات از `.env` خوانده می‌شوند و CLI از `argparse` استفاده نمی‌کند. لاگ تصمیم قابل بازپخش در JSONL شامل زمان، نماد، اقدام، سیگنال‌ها، دلایل فارسی، بررسی AI، کنترل ریسک، نتیجه اجرا و fillهای واقعی است. قالب کامل در `docs/DECISION_LOG_SCHEMA.md` آمده است.
+All configuration is read from `.env`, and the CLI does not use `argparse`.
 
-## وضعیت ایمنی تحویل
+The replayable decision log in JSONL includes timestamps, symbols, actions, signals, explanations in Persian, AI review results, risk checks, execution outcomes, and actual fills. The complete schema is documented in `docs/DECISION_LOG_SCHEMA.md`.
 
-حالت پیش‌فرض `shadow` است و ارسال سفارش فقط با فعال‌بودن هم‌زمان `TRADING_MODE=live` و `ENABLE_LIVE_TRADING=true` انجام می‌شود. کلیدها در `.env` هستند و commit نمی‌شوند.
+## Submission Safety Status
 
-با `TRADING_END_TIME` و `LIQUIDATION_BUFFER_MINUTES` می‌توان زمان پایان فعالیت را تعیین کرد؛ در زمان پایان، Agent خرید جدید را متوقف و برای فروش موجودی Spot اقدام می‌کند.
+The default mode is `shadow`. Orders are submitted only when both `TRADING_MODE=live` and `ENABLE_LIVE_TRADING=true` are enabled simultaneously. API keys are stored in `.env` and are not committed to version control.
+
+The end of the trading session can be configured using `TRADING_END_TIME` and `LIQUIDATION_BUFFER_MINUTES`. At the specified end time, the Agent stops initiating new buys and attempts to sell the existing Spot holdings.
