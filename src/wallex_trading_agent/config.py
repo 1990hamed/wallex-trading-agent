@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     stop_loss_atr: float = Field(default=1.5, gt=0, le=5, description="Stop distance in ATR")
     take_profit_atr: float = Field(default=2.5, gt=0, le=8, description="Target distance in ATR")
     decision_log_path: Path = Field(Path("data/decision_log.jsonl"), description="JSONL log path")
+    backtest_log_path: Path = Field(
+        Path("data/backtest_log.jsonl"), description="Backtest JSONL log path"
+    )
 
     @field_validator("mcp_server_url", mode="before")
     @classmethod

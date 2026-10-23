@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 Action = Literal["BUY", "SELL", "HOLD"]
 
@@ -74,7 +75,7 @@ class DecisionLog:
     ) -> DecisionLog:
         """Build a timestamped decision record in UTC."""
         return cls(
-            timestamp=datetime.now(UTC).isoformat(),
+            timestamp=datetime.now(ZoneInfo("Asia/Tehran")).isoformat(),
             mode=mode,
             symbol=symbol,
             decision=decision,
