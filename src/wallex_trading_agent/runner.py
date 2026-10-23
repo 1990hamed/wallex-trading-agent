@@ -72,9 +72,12 @@ def main() -> None:
     }.get(entry.risk_reason, "risk check completed")
     print(f"Risk control: {risk_reason}")
     execution_status = {
-        "skipped": "رد شد",
-        "submitted": "ارسال شد",
-    }.get(str(entry.execution.get("status")), str(entry.execution.get("status", "نامشخص")))
+        "رد شد": "rejected",
+        "سایه": "shadow",
+        "ارسال شد": "submitted",
+        "skipped": "rejected",
+        "submitted": "submitted",
+    }.get(str(entry.execution.get("status")), str(entry.execution.get("status", "unknown")))
     print(f"Execution result: {execution_status}")
     print(f"Realized PnL (TMN): {performance.realized_pnl}")
     print(f"Net return: {performance.return_percent}%")
