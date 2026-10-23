@@ -50,6 +50,17 @@ uv sync --all-groups
 uv run wallex-trading-agent
 ```
 
+Available project commands:
+
+```powershell
+uv run wallex-trading-agent  # Run one agent cycle
+uv run wallex-agent          # Alias for one agent cycle
+uv run wallex-backtest       # Run the historical Spot backtest
+uv run wallex-settle         # Produce the realized TMN settlement report
+uv run wallex-settlement     # Alias for settlement
+uv run wallex-healthcheck    # Read-only Wallex connectivity check
+```
+
 There are no command-line flags and no `argparse`; configuration is exclusively environment-based. Change `.env` to select a permitted `SYMBOL`, resolution, or risk limits.
 
 The supplied `.env` is already excluded from Git. Do not paste API keys into issues, logs, commits, or demos.
