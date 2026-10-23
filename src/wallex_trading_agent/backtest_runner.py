@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -30,6 +31,13 @@ def main() -> None:
         "symbol": settings.symbol,
         "candle_count": len(candles),
         "trade_count": result.trade_count,
+        "buy_count": sum(fill.side.upper() == "BUY" for fill in result.fills),
+        "sell_count": sum(fill.side.upper() == "SELL" for fill in result.fills),
+        "completed_trade_count": min(
+            sum(fill.side.upper() == "BUY" for fill in result.fills),
+            sum(fill.side.upper() == "SELL" for fill in result.fills),
+        ),
+        "fills": [{key: str(value) for key, value in asdict(fill).items()} for fill in result.fills],
         "report": result.report.to_dict(),
     }
     with settings.backtest_log_path.open("a", encoding="utf-8") as log_file:
