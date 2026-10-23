@@ -12,6 +12,11 @@ def main() -> None:
     graph = TradingAgent(settings).graph.get_graph()
     output = Path("docs/agent_graph.mmd")
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(graph.draw_mermaid(), encoding="utf-8")
+    mermaid = graph.draw_mermaid()
+    notes = (
+        "\n%% Indicators: EMA9, EMA21, RSI14, ATR14, ADX14\n"
+        "%% execute_or_shadow also enforces TRADING_END_TIME liquidation.\n"
+    )
+    output.write_text(mermaid + notes, encoding="utf-8")
     print(f"Agent graph exported to {output}")
 
