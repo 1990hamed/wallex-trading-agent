@@ -50,13 +50,14 @@ class WallexClient:
 
     def historical_candles(self, symbol: str, resolution: str, candle_count: int) -> list[Candle]:
         now = int(time.time())
+        interval_seconds = self._resolution_seconds(resolution)
         history = self._request(
             "GET",
             "/v1/udf/history",
             params={
                 "symbol": symbol,
                 "resolution": resolution,
-                "from": now - (candle_count * 60 * int(resolution)),
+                "from": now - (candle_count * interval_seconds),
                 "to": now,
             },
         )
@@ -83,6 +84,16 @@ class WallexClient:
                 strict=True,
             )
         ]
+
+    @staticmethod
+    def _resolution_seconds(resolution: str) -> int:
+        """Convert Wallex resolution notation to seconds for history requests."""
+        value = resolution.strip().upper()
+        if value.endswith("D"):
+            return int(value[:-1]) * 86_400
+        if value.endswith("W"):
+            return int(value[:-1]) * 604_800
+        return int(value) * 60
 
     def balances(self) -> dict[str, Any]:
         return self._request("GET", "/v1/account/balances").get("result", {}).get("balances", {})

@@ -64,3 +64,9 @@ def test_quantize_order_rounds_down_to_market_precision():
     assert WallexClient.quantize_order(Decimal("1.239"), 2) == Decimal("1.24")
     assert WallexClient.quantize_order(Decimal("1.239"), 1) == Decimal("1.2")
 
+
+def test_resolution_supports_daily_and_weekly_candles():
+    assert WallexClient._resolution_seconds("1D") == 86_400
+    assert WallexClient._resolution_seconds("2W") == 1_209_600
+    assert WallexClient._resolution_seconds("60") == 3_600
+
