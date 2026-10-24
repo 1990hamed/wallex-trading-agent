@@ -58,7 +58,6 @@ class DecisionLog:
     decision: TradeDecision
     risk_approved: bool
     risk_reason: str
-    mcp_tools: list[str]
     ai_review: dict[str, object]
     execution: dict[str, object]
 
@@ -71,7 +70,6 @@ class DecisionLog:
         decision: TradeDecision,
         risk_approved: bool,
         risk_reason: str,
-        mcp_tools: list[str],
         ai_review: dict[str, object],
         execution: dict[str, object],
     ) -> DecisionLog:
@@ -83,7 +81,6 @@ class DecisionLog:
             decision=decision,
             risk_approved=risk_approved,
             risk_reason=risk_reason,
-            mcp_tools=mcp_tools,
             ai_review=ai_review,
             execution=execution,
         )

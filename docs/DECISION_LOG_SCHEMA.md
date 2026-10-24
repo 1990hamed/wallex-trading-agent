@@ -25,7 +25,6 @@ Each line in `data/decision_log.jsonl` is an independent JSON object. This is a 
   },
   "risk_approved": false,
   "risk_reason": "...",
-  "mcp_tools": ["tool name"],
   "ai_review": {
     "status": "confirmed|vetoed|failed|skipped",
     "rationale": "..."

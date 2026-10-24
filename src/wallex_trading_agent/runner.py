@@ -28,7 +28,6 @@ def main() -> None:
         decision=state["decision"],
         risk_approved=state["risk_approved"],
         risk_reason=state["risk_reason"],
-        mcp_tools=state["mcp_tools"],
         ai_review=state["ai_review"],
         execution=state["execution"],
     )
